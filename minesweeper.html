@@ -58,6 +58,8 @@
     </style>
   </head>
   <body>
+    <div class='instruction'>Alt + Click = flag</div>
+    <div id='main'</div>
     <script>
 
       var GameBoard = function() {
@@ -363,7 +365,7 @@
       });
       React.render(
         React.createElement(Game, {}, ''),
-        document.body);
+        document.getElementById('main'));
     </script>
   </body>
 </html>

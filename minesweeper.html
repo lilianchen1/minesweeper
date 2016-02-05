@@ -60,7 +60,7 @@
   <body>
     <div class='instruction'>Alt + Click = flag</div>
     <div id='main'</div>
-    <script>
+    <script type='text/jsx'>
 
       var GameBoard = function() {
         this.numRows = 10;
@@ -206,11 +206,12 @@
 
         render: function() {
           return (
-            React.createElement('div', {},
-              React.createElement(Board, {gameBoard: this.state.board, game: this}, ''),
-              React.createElement('div', {className: 'game-over', ref: 'modal'},
-                React.createElement('button', {className: 'game-start', onClick: this.handleClick, ref: 'button'}, 'Start New Game'))
-            )
+            <div>
+              <Board gameBoard={this.state.board} game={this}/>
+              <div className='game-over' ref='modal'>
+                <button className='game-start' onClick={this.handleClick} ref='button'>Start New Game</button>
+              </div>
+            </div>
           );
         },
 
@@ -304,8 +305,12 @@
               tiles.push(React.createElement(Tile, {coord: [i, j], identity: currentTile.identity, board: this, key: 'pos_' + i + '_' + j}, ''));
             }
           }
-          return (React.createElement('div', {className: 'board', onClick: this.handleClick}, tiles,
-                    React.createElement('div', {className: 'tracker'}, 'flags left: ' + this.state.flagsLeft)));
+          return (
+            <div className='board' onClick={this.handleClick}>
+              {tiles}
+              <div className='tracker'>Flags left: {this.state.flagsLeft}</div>
+            </div>
+          );
         }
       });
 
@@ -359,7 +364,9 @@
           numberClassMap[4] = 'darkblue';
           numberClassMap[5] = 'purple';
           return (
-            React.createElement('div', {className: 'tile ' + numberClassMap[this.state.identity], onClick: this.reveal}, this.state.shown)
+            <div className={'tile ' + numberClassMap[this.state.identity]} onClick={this.reveal}>
+              {this.state.shown}
+            </div>
           );
         },
       });

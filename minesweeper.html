@@ -66,20 +66,23 @@
         this.numRows = 10;
         this.numCols = 10;
         this.bombs = this.generateBombs();
-        this.tiles = this.setUp();
+        this.tiles = this.setUp().tiles;
         this.flagged = [];
+        this.notRevealed = this.setUp().loci;
         this.won = false;
         this.lost = false;
       }
 
       GameBoard.prototype.setUp = function() {
         var tiles = [[], [], [], [], [], [], [], [], [], []];
+        var loci = [];
         for (var i = 0; i < this.numRows; i++) {
           for (var j = 0; j < this.numCols; j++) {
             tiles[i].push(new GameTile(this.getTileValue([i, j]), [i, j], false, false));
+            loci.push([i, j])
           }
         }
-        return tiles;
+        return {tiles: tiles, loci: loci};
       }
 
       GameBoard.prototype.getTileValue = function(coord) {
@@ -109,13 +112,15 @@
       };
 
       GameBoard.prototype.win = function() {
-        if (this.flagged.length !== this.bombs.length) {
+        if (this.flagged.length + this.notRevealed.length !== this.bombs.length) {
           return false;
         } else {
           var matched = 0;
           for (var j = 0; j < this.bombs.length; j++) {
             var currentBombLocus = this.bombs[j];
             if (include(this.flagged, currentBombLocus)) {
+              matched++;
+            } else if (include(this.notRevealed, currentBombLocus)) {
               matched++;
             }
           }
@@ -228,9 +233,6 @@
         },
 
         handleClick: function() {
-          // To do:
-          // handle winning
-          // make new game after click on something after game over
           var tileComp = this.state.clickedTile;
           if (this.props.gameBoard.win()) {
             this.props.game.handleGameOver();
@@ -257,17 +259,17 @@
           });
         },
         revealNeighbors: function(tileComp) {
-          var adjacentPos = this.getAdjacent(tileComp.state.coord);
+          var adjacentPos = this.getAdjacent(tileComp.props.coord);
           while (adjacentPos.length > 0) {
             var tilePos = adjacentPos.shift();
             var tile = this.getTile(tilePos);
-            if (tile.state.identity !== 'B' && !tile.state.flagged) {
-              this.state.revealedTilesCoord.push(tile.state.coord);
+            if (tile.props.identity !== 'B' && !tile.state.flagged) {
+              this.state.revealedTilesCoord.push(tile.props.coord);
               if (!stringInclude(tile.getDOMNode().className, 'revealed')) {
                 tile.getDOMNode().className += ' revealed'
               }
-              if (tile.state.identity !== 0) {
-                tile.setState({shown: tile.state.identity});
+              if (tile.props.identity !== 0) {
+                tile.setState({shown: tile.props.identity});
               } else {
                 adjacentPos = adjacentPos.concat(this.getAdjacent(tilePos));
               }
@@ -318,25 +320,22 @@
         getInitialState: function() {
           return {
             shown: '',
-            coord: this.props.coord,
-            identity: this.props.identity,
-            board: this.props.board,
             flagged: false,
           }
         },
         reveal: function(event) {
           event.preventDefault();
-          this.state.board.state.clickedTile = this;
-          var gameBoard = this.state.board.props.gameBoard
-          var gameTile = gameBoard.tiles[this.state.coord[0]][this.state.coord[1]]
+          this.props.board.state.clickedTile = this;
+          var gameBoard = this.props.board.props.gameBoard
+          var gameTile = gameBoard.tiles[this.props.coord[0]][this.props.coord[1]]
           if (event.altKey) {
             this.state.flagged = true;
             this.setState({shown: 'F'});
             gameTile.flagged = true;
             gameBoard.flagged.push(gameTile.coord);
-            this.state.board.setState({flagsLeft: gameBoard.bombs.length - gameBoard.flagged.length})
+            this.props.board.setState({flagsLeft: gameBoard.bombs.length - gameBoard.flagged.length})
           } else {
-            this.state.board.state.revealedTilesCoord.push(this.props.coord);
+            this.props.board.state.revealedTilesCoord.push(this.props.coord);
             this.state.flagged = false;
             gameTile.flagged = false;
             // need to remove from gameBoard.tiles
@@ -346,11 +345,11 @@
                 gameBoard.flagged = gameBoard.flagged.slice(0, i).concat(gameBoard.flagged.slice(i + 1, gameBoard.flagged.length));
               }
             }
-            if (this.state.identity === 0) {
+            if (this.props.identity === 0) {
               event.currentTarget.className += ' revealed';
               this.setState({shown: ''});
             } else {
-              this.setState({shown: this.state.identity});
+              this.setState({shown: this.props.identity});
             }
           }
         },
@@ -364,7 +363,7 @@
           numberClassMap[4] = 'darkblue';
           numberClassMap[5] = 'purple';
           return (
-            <div className={'tile ' + numberClassMap[this.state.identity]} onClick={this.reveal}>
+            <div className={'tile ' + numberClassMap[this.props.identity]} onClick={this.reveal}>
               {this.state.shown}
             </div>
           );

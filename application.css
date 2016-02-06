@@ -1,0 +1,47 @@
+.tile {
+  width: 20px;
+  height: 20px;
+  background-color: #eee;
+  border-bottom: 1px solid gray;
+  border-right: 1px solid gray;
+  float: left;
+  font-family: sans-serif;
+  text-align: center;
+}
+.board {
+  width: 220px;
+}
+.revealed.blue {
+  color: blue;
+}
+.revealed.red {
+  color: red;
+}
+.revealed.green {
+  color: green;
+}
+.revealed.darkblue {
+  color: darkblue;
+}
+.revealed.purple {
+  color: purple;
+}
+.revealed {
+  border-bottom: 1px solid gray;
+  border-right: 1px solid gray;
+  background-color: lightgray;
+}
+
+.game-over {
+  display: none;
+}
+
+.modal {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background: rgba(0,0,0,0.5);
+  text-align: center;
+  top: 0;
+}

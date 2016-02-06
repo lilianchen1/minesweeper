@@ -62,16 +62,22 @@
         return bombsLoci;
       };
 
+      GameBoard.prototype.removeFromRevealed = function(coord) {
+        for (var i = 0; i < this.notRevealed.length; i++) {
+          if (coord[0] === this.notRevealed[i][0] && coord[1] === this.notRevealed[i][1]) {
+            this.notRevealed.splice(i, 1);
+          }
+        }
+      };
+
       GameBoard.prototype.win = function() {
-        if (this.flagged.length + this.notRevealed.length !== this.bombs.length) {
+        if (this.notRevealed.length !== this.bombs.length) {
           return false;
         } else {
           var matched = 0;
           for (var j = 0; j < this.bombs.length; j++) {
             var currentBombLocus = this.bombs[j];
-            if (include(this.flagged, currentBombLocus)) {
-              matched++;
-            } else if (include(this.notRevealed, currentBombLocus)) {
+            if (include(this.notRevealed, currentBombLocus)) {
               matched++;
             }
           }
@@ -216,6 +222,7 @@
             var tile = this.getTile(tilePos);
             if (tile.props.identity !== 'B' && !tile.state.flagged) {
               tile.state.revealed = true;
+              this.props.gameBoard.removeFromRevealed(tilePos);
               this.state.revealedTilesCoord.push(tile.props.coord);
               if (!stringInclude(tile.getDOMNode().className, 'revealed')) {
                 tile.getDOMNode().className += ' revealed'
@@ -294,6 +301,7 @@
             }
           } else {
             this.state.revealed = true;
+            this.props.board.props.gameBoard.removeFromRevealed(this.props.coord);
             this.props.board.state.revealedTilesCoord.push(this.props.coord);
             this.state.flagged = false;
             gameTile.flagged = false;

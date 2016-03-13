@@ -1,6 +1,8 @@
 # minesweeper
 Minesweeper game implemented with React
 
+[Game link](http://lilianchen1.github.io/minesweeper/minesweeper.html)
+
 ![game pic] (https://github.com/lilianchen1/minesweeper/blob/master/pic_one.png)
 
 ### Click events on the tiles triggers rerendering of components via state changes.

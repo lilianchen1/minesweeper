@@ -3,173 +3,30 @@
   <head>
     <meta charset="utf-8">
     <title>Minesweeper</title>
-    <script src="https://fb.me/react-0.13.3.js"></script>
+    <script src="https://fb.me/react-0.14.7.js"></script>
+    <script src="https://fb.me/react-dom-0.14.7.js"></script>
     <script src="https://fb.me/JSXTransformer-0.13.3.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
     <link rel="stylesheet" href="application.css" type="text/css">
+    <script src="./helpers.js"></script>
   </head>
   <body>
     <div class='instruction'>Alt + Click = flag <br/> Uncover all nonbomb tiles to win</div>
     <div id='main'></div>
     <script type='text/jsx'>
 
-      var GameBoard = function() {
-        this.numRows = 10;
-        this.numCols = 10;
-        this.bombs = this.generateBombs();
-        this.tiles = this.setUp().tiles;
-        this.flagged = [];
-        this.notRevealed = this.setUp().loci;
-        this.won = false;
-        this.lost = false;
-      }
-
-      GameBoard.prototype.setUp = function() {
-        var tiles = [[], [], [], [], [], [], [], [], [], []];
-        var loci = [];
-        for (var i = 0; i < this.numRows; i++) {
-          for (var j = 0; j < this.numCols; j++) {
-            tiles[i].push(new GameTile(this.getTileValue([i, j]), [i, j], false, false));
-            loci.push([i, j])
-          }
-        }
-        return {tiles: tiles, loci: loci};
-      }
-
-      GameBoard.prototype.getTileValue = function(coord) {
-        if (include(this.bombs, coord)) {
-          return 'B'
-        } else {
-          var numNearbyBombs = 0;
-          var that = this;
-          _.each(dirs, function(dir) {
-            if (include(that.bombs, [coord[0] + dir[0], coord[1] + dir[1]])) {
-              numNearbyBombs = numNearbyBombs + 1;
-            }
-          })
-          return numNearbyBombs;
-        }
-      }
-
-      GameBoard.prototype.generateBombs = function() {
-        var bombsLoci = [];
-        while (bombsLoci.length < 15) {
-          var coord = [Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)]
-          if (!include(bombsLoci, coord)) {
-            bombsLoci.push(coord);
-          }
-        }
-        return bombsLoci;
-      };
-
-      GameBoard.prototype.removeFromRevealed = function(coord) {
-        for (var i = 0; i < this.notRevealed.length; i++) {
-          if (coord[0] === this.notRevealed[i][0] && coord[1] === this.notRevealed[i][1]) {
-            this.notRevealed.splice(i, 1);
-          }
-        }
-      };
-
-      GameBoard.prototype.win = function() {
-        if (this.notRevealed.length !== this.bombs.length) {
-          return false;
-        } else {
-          var matched = 0;
-          for (var j = 0; j < this.bombs.length; j++) {
-            var currentBombLocus = this.bombs[j];
-            if (include(this.notRevealed, currentBombLocus)) {
-              matched++;
-            }
-          }
-          if (matched === this.bombs.length) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      };
-
-      var GameTile = function(identity, coord, flagged, revealed) {
-        this.identity = identity;
-        this.coord = coord;
-        this.flagged = flagged;
-        this.revealed = revealed
-      }
-
-      function include(array, item) {
-        if (array.length === 0) {
-          return false;
-        } else {
-          for (var i = 0; i < array.length; i++) {
-            if (array[i][0] === item[0] && array[i][1] === item[1]) {
-                return true;
-            }
-          }
-          return false;
-        }
-      }
-
-      function stringInclude(big, small) {
-        for (var i = 0; i < big.length; i++) {
-          for (var j = 1; j <= big.length; j++) {
-            if (big.slice(i, j) === small) {
-              return true
-            }
-          }
-        }
-        return false
-      }
-
-      function outsideRange(n) {
-        if (n < 0 || n > 9) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-
-      function sameArray(arr1, arr2) {
-        if (arr1.length !== arr2.length) {
-          return false;
-        } else {
-          for (var i = 0; i < arr1.length; i++) {
-            if (arr1[i] !== arr2[i]) {
-              return false;
-            }
-          }
-          return true;
-        }
-      }
-
-      function removeFlagged(arr, tile) {
-        for (var i = 0; i < arr.length; i++) {
-          var currentTile = arr[i];
-          if (currentTile.coord === tile.coord) {
-            arr = arr.slice(0, i).concat(arr.slice(i + 1, arr.length));
-          }
-        }
-      }
-
-      var dirs = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [-1, -1], [-1, 1], [1, -1]];
-
       var Game = React.createClass({
-        getInitialState: function() {
-          var board = new GameBoard();
-          return { board: board }
-        },
-
         handleClick: function() {
           location.reload();
         },
 
         handleGameOver: function() {
-          this.refs.modal.getDOMNode().className += ' modal';
+          this.refs.modal.className += ' modal';
         },
 
         render: function() {
           return (
             <div>
-              <Board gameBoard={this.state.board} game={this}/>
+              <Board game={this} />
               <div className='game-over' ref='modal'>
                 <button className='game-start' onClick={this.handleClick} ref='button'>Start New Game</button>
               </div>
@@ -183,55 +40,182 @@
         getInitialState: function() {
           return {
             clickedTile: null,
-            tiles: [],
             revealedTilesCoord: [],
-            flagsLeft: this.props.gameBoard.bombs.length
+            flagsLeft: null,
+            boardGrid: [],
+            notRevealedTilesCoord: [],
+            flaggedTiles: []
            }
         },
 
-        handleClick: function() {
-          var tileComp = this.state.clickedTile;
-          if (this.props.gameBoard.win()) {
-            this.props.game.handleGameOver();
+        componentWillMount: function() {
+          this.generateBombs();
+          this.setUp();
+        },
+
+        generateBombs: function() {
+          var bombsLoci = [];
+          while (bombsLoci.length < 15) {
+            var coord = [Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)]
+            if (!include(bombsLoci, coord)) {
+              bombsLoci.push(coord);
+            }
           }
+          this.bombs = bombsLoci;
+          this.setState({
+            flagsLeft: this.bombs.length
+          })
+        },
+
+        setUp: function() {
+          var tiles = [];
+          var loci = [];
+          for (var i = 0; i < 10; i++) {
+            tiles.push([])
+            for (var j = 0; j < 10; j++) {
+              tiles[i].push({
+                identity: this.getTileIdentity([i,j]),
+                coord: [i,j],
+                revealed: false,
+                flagged: false,
+                shown: ''
+              });
+              loci.push([i,j])
+            }
+          }
+          this.setState({
+            boardGrid: tiles,
+            notRevealedTilesCoord: loci
+          });
+        },
+
+        getTileIdentity: function(coord) {
+          if (include(this.bombs, coord)) {
+            return 'B'
+          } else {
+            var numNearbyBombs = 0;
+            var that = this;
+            dirs.map(function(dir) {
+              if (include(that.bombs, [coord[0] + dir[0], coord[1] + dir[1]])) {
+                numNearbyBombs = numNearbyBombs + 1;
+              }
+            })
+            return numNearbyBombs;
+          }
+        },
+
+        handleClick: function(tile, event) {
+          if (tile.revealed) {
+            console.log("This tile is already revealed");
+            return;
+          }
+          var board = this.state.boardGrid
           if (!event.altKey) {
-            if (tileComp.props.identity === 'B') {
+            if (tile.identity === 'B') {
               this.revealBoard();
               this.props.game.handleGameOver();
-            } else if (tileComp.props.identity === 0) {
-              this.revealNeighbors(tileComp);
+            } else if (tile.identity === 0) {
+              this.revealNeighbors(tile);
             } else {
-              tileComp.getDOMNode().className += ' revealed'
+              event.currentTarget.className += ' revealed';
+              // revealed it from the board and reset state of boardGrid
+              tile.revealed = true;
+              tile.flagged = false;
+              if (!(tile.identity === 0)) {
+                tile.shown = tile.identity;
+              }
+              board[tile.coord[0]][tile.coord[1]] = tile;
+              this.state.revealedTilesCoord.push(tile.coord);
+              this.setState({
+                boardGrid: board
+              })
+
+              // if it was previously flagged, need to remove it from flaggedTiles
+              for (var i = 0; i < this.state.flaggedTiles.length; i++) {
+                var currentTilePos = this.state.flaggedTiles[i];
+                if (currentTilePos === tile.coord) {
+                  initialFlaggedTiles = this.state.flaggedTiles;
+                  this.setState({
+                    flaggedTiles: initialFlaggedTiles.slice(0, i).concat(initialFlaggedTiles.slice(i+1, initialFlaggedTiles.length))
+                  })
+                }
+              }
+
+              // remove from notRevealedTilesCoord because it is not revealed
+              this.removeFromNotRevealed(tile.coord);
+            }
+            if (this.win()) {
+              this.props.game.handleGameOver();
+            }
+
+          } else {
+            // flag
+            if (this.state.flaggedTiles.length >= this.bombs.length) {
+              console.log("There are not more than " + this.bombs.length + " flags.")
+              return;
+            }
+            if (!include(this.state.flaggedTiles, tile.coord)) {
+              tile.shown = 'F';
+              tile.flagged = true;
+              board[tile.coord[0]][tile.coord[1]] = tile;
+              this.state.flaggedTiles.push(tile.coord);
+              this.setState({
+                flagsLeft: this.bombs.length - this.state.flaggedTiles.length,
+                boardGrid: board,
+              })
+            }
+          }
+        },
+        win: function() {
+          if (this.state.notRevealedTilesCoord.length !== this.bombs.length) {
+            return false;
+          } else {
+            var matched = 0;
+            for (var j = 0; j < this.bombs.length; j++) {
+              var currentBombLocus = this.bombs[j];
+              if (include(this.state.notRevealedTilesCoord, currentBombLocus)) {
+                matched++;
+              }
+            }
+            if (matched === this.bombs.length) {
+              return true;
+            } else {
+              return false;
             }
           }
         },
         revealBoard: function() {
-          _.each(this.state.tiles, function(tile) {
-            if (!stringInclude(tile.getDOMNode().className, 'revealed')) {
-              tile.getDOMNode().className += ' revealed'
-            }
-            if (tile.props.identity !== 0) {
-              tile.setState({shown: tile.props.identity});
-            }
-          });
+          var board = this.state.boardGrid;
+          var that = this;
+          board.map(function(row) {
+            row.map(function(tile) {
+              tile.shown = tile.identity === 0 ? '' : tile.identity;
+              tile.revealed = true;
+            })
+          })
+          this.setState({boardGrid: board})
         },
-        revealNeighbors: function(tileComp) {
-          var adjacentPos = this.getAdjacent(tileComp.props.coord);
+        revealNeighbors: function(tile) {
+          var adjacentPos = this.getAdjacent(tile.coord);
+          var board = this.state.boardGrid;
           while (adjacentPos.length > 0) {
             var tilePos = adjacentPos.shift();
             var tile = this.getTile(tilePos);
-            if (tile.props.identity !== 'B' && !tile.state.flagged) {
-              tile.state.revealed = true;
-              this.props.gameBoard.removeFromRevealed(tilePos);
-              this.state.revealedTilesCoord.push(tile.props.coord);
-              if (!stringInclude(tile.getDOMNode().className, 'revealed')) {
-                tile.getDOMNode().className += ' revealed'
-              }
-              if (tile.props.identity !== 0) {
-                tile.setState({shown: tile.props.identity});
+            if (tile.identity !== 'B' && !tile.flagged) {
+              tile.revealed = true;
+              if (tile.identity !== 0) {
+                tile.shown = tile.identity;
               } else {
                 adjacentPos = adjacentPos.concat(this.getAdjacent(tilePos));
               }
+              board[tile.coord[0]][tile.coord[1]] = tile;
+              this.state.revealedTilesCoord.push(tile.coord);
+              this.setState({
+                boardGrid: board,
+              });
+
+              // remove from notRevealedTilesCoord because it is not revealed
+              this.removeFromNotRevealed(tile.coord);
             }
           }
         },
@@ -249,10 +233,12 @@
           return neighbors;
         },
         getTile: function(coord) {
-          for (var i = 0; i < this.state.tiles.length; i++) {
-            var tile = this.state.tiles[i];
-            if (tile.props.coord[0] === coord[0] && tile.props.coord[1] === coord[1]) {
-              return tile;
+          return this.state.boardGrid[coord[0]][coord[1]];
+        },
+        removeFromNotRevealed: function(coord) {
+          for (var i = 0; i < this.state.notRevealedTilesCoord.length; i++) {
+            if (coord[0] === this.state.notRevealedTilesCoord[i][0] && coord[1] === this.state.notRevealedTilesCoord[i][1]) {
+              this.state.notRevealedTilesCoord.splice(i, 1);
             }
           }
         },
@@ -262,12 +248,12 @@
           var tiles = [];
           for (var i = 0; i < numRows; i++) {
             for (var j = 0; j < numCols; j++) {
-              var currentTile = this.props.gameBoard.tiles[i][j]
-              tiles.push(React.createElement(Tile, {coord: [i, j], identity: currentTile.identity, board: this, key: 'pos_' + i + '_' + j}, ''));
+              var currentTile = this.state.boardGrid[i][j]
+              tiles.push(<Tile handleClick={this.handleClick} tile={currentTile} key={currentTile.coord} />)
             }
           }
           return (
-            <div className='board' onClick={this.handleClick}>
+            <div className='board'>
               {tiles}
               <div className='tracker'>Flags left: {this.state.flagsLeft}</div>
             </div>
@@ -276,51 +262,7 @@
       });
 
       var Tile = React.createClass({
-        getInitialState: function() {
-          return {
-            shown: '',
-            flagged: false,
-            revealed: false
-          }
-        },
-        reveal: function(event) {
-          if (this.state.revealed) {
-            return;
-          }
-          event.preventDefault();
-          this.props.board.state.clickedTile = this;
-          var gameBoard = this.props.board.props.gameBoard
-          var gameTile = gameBoard.tiles[this.props.coord[0]][this.props.coord[1]]
-          if (event.altKey) {
-            if (!include(this.props.board.props.gameBoard.flagged, this.props.coord)) {
-              this.state.flagged = true;
-              this.setState({shown: 'F'});
-              gameTile.flagged = true;
-              gameBoard.flagged.push(gameTile.coord);
-              this.props.board.setState({flagsLeft: gameBoard.bombs.length - gameBoard.flagged.length})
-            }
-          } else {
-            this.state.revealed = true;
-            this.props.board.props.gameBoard.removeFromRevealed(this.props.coord);
-            this.props.board.state.revealedTilesCoord.push(this.props.coord);
-            this.state.flagged = false;
-            gameTile.flagged = false;
-            for (var i = 0; i < gameBoard.flagged.length; i++) {
-              var currentTilePos = gameBoard.flagged[i];
-              if (currentTilePos === gameTile.coord) {
-                gameBoard.flagged = gameBoard.flagged.slice(0, i).concat(gameBoard.flagged.slice(i + 1, gameBoard.flagged.length));
-              }
-            }
-            if (this.props.identity === 0) {
-              event.currentTarget.className += ' revealed';
-              this.setState({shown: ''});
-            } else {
-              this.setState({shown: this.props.identity});
-            }
-          }
-        },
         render: function() {
-          this.props.board.state.tiles.push(this);
           var numberClassMap = {};
           numberClassMap[0] = 'zero'
           numberClassMap[1] = 'blue';
@@ -328,15 +270,17 @@
           numberClassMap[3] = 'red';
           numberClassMap[4] = 'darkblue';
           numberClassMap[5] = 'purple';
+          var revealed = this.props.tile.revealed ? ' revealed' : ''
           return (
-            <div className={'tile ' + numberClassMap[this.props.identity]} onClick={this.reveal}>
-              {this.state.shown}
+            <div className={'tile ' + numberClassMap[this.props.tile.identity] + revealed} onClick={this.props.handleClick.bind(null, this.props.tile)} >
+              {this.props.tile.shown}
             </div>
           );
         },
       });
-      React.render(
-        React.createElement(Game, {}, ''),
+
+      ReactDOM.render(
+        <Game />,
         document.getElementById('main'));
     </script>
   </body>
